@@ -41,3 +41,29 @@ def test_manifest_hash_of_raw_source(client, dirty):
 
 def test_missing_run_has_404(client):
     assert client.get('/api/runs/unknown').json['code'] == 'UNKNOWN_RUN'
+
+
+def test_late_stop_flips_direction_and_old_version_survives(client, dirty):
+    first = client.post('/api/runs', json={'sample': 'dirty'}).json
+    assert first['snapshot']['results']['ledger']['direction'] == 'DEMURRAGE'
+
+    late = dict(dirty)
+    late['stops'] = dirty['stops'] + 'S90,RAIN,2026-12-31T23:00Z,2027-01-01T01:30Z\n'
+    second = client.post('/api/runs', json={'sources': late}).json
+    assert second['created'] is True
+    assert second['snapshot']['results']['ledger']['direction'] == 'DESPATCH'
+
+    # The earlier demurrage archive must remain readable alongside the new one.
+    old = client.get('/api/runs/' + first['run_id']).json
+    assert old['results']['ledger']['direction'] == 'DEMURRAGE'
+    assert {r['run_id'] for r in client.get('/api/runs').json['runs']} == {first['run_id'], second['run_id']}
+
+
+def test_same_round_rerun_does_not_double_book(client, dirty):
+    late = dict(dirty)
+    late['stops'] = dirty['stops'] + 'S90,RAIN,2026-12-31T23:00Z,2027-01-01T01:30Z\n'
+    first = client.post('/api/runs', json={'sources': late}).json
+    again = client.post('/api/runs', json={'sources': late}).json
+    assert (first['created'], again['created'], again['run_id']) == (True, False, first['run_id'])
+    assert len(client.get('/api/runs').json['runs']) == 1
+

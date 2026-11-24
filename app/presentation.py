@@ -1,6 +1,13 @@
 NAMES = {"intake": "装卸事件采信", "notice": "准备通知裁决", "exceptions": "例外区间切片", "clock": "免计边界复算",
          "ledger": "滞期费与账单", "runs": "批次留档复跑", "evidence": "证据包签发"}
 
+DIRECTION_LABELS = {"DEMURRAGE": "滞期", "DESPATCH": "速遣", "BALANCED": "平衡", "UNDETERMINED": "方向待定"}
+
+REVERSAL_LABELS = {"OPPOSITE_DIRECTION": "方向相反，全额冲销船方滞期发票",
+                   "NO_LIABILITY": "无滞期责任，全额冲销船方滞期发票",
+                   "DIRECTION_UNSETTLED": "方向未定，尚不能判定是否应冲销",
+                   "INVOICE_INCOMPLETE": "船方账单缺档或冲突"}
+
 
 def panel(stage, result):
     if stage == "intake":

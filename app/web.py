@@ -9,7 +9,7 @@ from .modules.evidence.service import certify
 from .modules.runs.service import archive
 from .modules.runs.storage import list_runs, lookup
 from .pipeline import evaluate
-from .presentation import NAMES, panel
+from .presentation import DIRECTION_LABELS, NAMES, REVERSAL_LABELS, panel
 
 bp = Blueprint("web", __name__)
 
@@ -46,5 +46,8 @@ def view(stage="ledger"):
     return render_template("desk.html", names=NAMES, stage=stage, mode=mode, sources=sources,
                            generated=datetime.now(timezone.utc).strftime("%m-%d %H:%M UTC"),
                            rule=RULE, error=error, clock=clock, ledger=ledger, intake=intake, table=table,
+                           direction_label=DIRECTION_LABELS.get(ledger.get("direction"), "—"),
+                           reversal_label=REVERSAL_LABELS.get(ledger.get("reversal", {}).get("reason"), ""),
+                           direction_labels=DIRECTION_LABELS, reversal_labels=REVERSAL_LABELS,
                            results=results, records=records, saved=saved, certificate=certificate,
                            inserted=inserted if saved else None)

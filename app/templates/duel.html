@@ -1,14 +1,48 @@
 <section class="panel duel" aria-labelledby="duel-title">
   <div class="balance"><h3 id="duel-title">滞期费分档对照</h3><span>合计 {{ ledger.rows|length }} 档 / 差异 {{ ledger.differences }} 档</span></div>
+  <div class="verdict verdict-{{ ledger.direction|lower }}">
+    <div><small>本次方向</small><strong>{{ direction_label }}</strong></div>
+    <div><small>可确认金额</small><strong>{{ (ledger.confirmable_usd ~ ' USD') if ledger.confirmable_usd is not none else '待证' }}</strong></div>
+    <div><small>已核实 / 待补证</small><strong>{{ ledger.confirmed_minutes }} / {{ ledger.pending.minutes }} min</strong></div>
+  </div>
+  {% if ledger.direction == 'UNDETERMINED' %}
+  <div class="note pending" role="status">
+    <strong>方向待定，暂不确认任何金额。</strong>
+    尚有 {{ ledger.pending.minutes }} 分钟缺证未补齐，补齐前结果可能翻向另一方向：
+    最多滞期 {{ ledger.pending.demurrage_total_usd }} USD，最多速遣 {{ ledger.pending.despatch_total_usd }} USD（波动 {{ ledger.pending.at_risk_usd }} USD）。
+    未核实时段既不计速遣也不计滞期，待补齐后再定方向。
+  </div>
+  {% elif ledger.direction == 'DEMURRAGE' and ledger.pending.minutes %}
+  <div class="note pending">
+    已确认 {{ ledger.confirmable_usd }} USD；另有 {{ ledger.pending.minutes }} 分钟缺证，补齐后滞期最多增至 {{ ledger.pending.demurrage_total_usd }} USD（可再增 {{ ledger.pending.demurrage_usd }} USD）。该时段不计入可确认金额。
+  </div>
+  {% elif ledger.direction == 'DESPATCH' and ledger.pending.minutes %}
+  <div class="note pending">
+    {% if ledger.confirmed_minutes %}已核实节省 {{ ledger.confirmed_minutes }} min，确认速遣 {{ ledger.confirmable_usd }} USD；{% else %}滞期已可排除，但尚不能确认速遣金额；{% endif %}另有 {{ ledger.pending.minutes }} 分钟缺证，补齐后速遣最多增至 {{ ledger.pending.despatch_total_usd }} USD（可再增 {{ ledger.pending.despatch_usd }} USD）。该时段不计入可确认金额。
+  </div>
+  {% endif %}
+  {% if ledger.direction == 'DESPATCH' %}
+  <div class="note despatch">
+    速遣费率 {{ ledger.despatch.rate_usd_min }} USD/min（第一档滞期费之半），按核实后的节省分钟计付。
+  </div>
+  {% endif %}
+  {% if ledger.reversal.required or ledger.reversal.pending %}
+  <div class="note reversal {{ 'hold' if ledger.reversal.pending else '' }}" role="status">
+    船方已按滞期开票 {{ ledger.reversal.invoice_usd or '（金额待证）' }} USD →
+    {% if ledger.reversal.required %}<strong>应全额冲销船方 {{ ledger.reversal.invoice_usd }} USD 发票，记 {{ ledger.reversal.usd }} USD</strong>，不按零处理。
+    {% else %}<strong>冲销暂挂</strong>，暂不作零。{% endif %}
+    原因：{{ reversal_label }}。
+  </div>
+  {% endif %}
   <div class="twin scroll" id="tier-evidence">
     <div class="ledger-cap"><strong>船方账单</strong><strong>港方复算</strong></div>
     {% for row in ledger.rows %}
     <div class="entry {{ 'mismatch' if row.code != 'MATCH' }}">
       <div><small>第 {{ row.tier }} 档{% if row.invoice_line %} · 原件 #{{ row.invoice_line }}{% endif %}</small><b>{{ row.actual_usd or '—' }}{% if row.actual_usd %} USD{% endif %}</b><span>{{ row.actual_minutes if row.actual_minutes is not none else '—' }} min</span></div>
-      <div class="delta"><span>{{ row.delta_usd if row.delta_usd is not none else '待证' }}</span><small>{{ row.code }}</small></div>
-      <div><small>第 {{ row.tier }} 档 · {{ row.rate_usd_min }} USD/min</small><b>{{ row.expected_usd }} USD</b><span>{{ row.minutes }} min</span></div>
+      <div class="delta"><span>{{ row.delta_usd if (row.delta_usd is not none and ledger.direction_settled) else '待证' }}</span><small>{{ row.code }}</small></div>
+      <div><small>第 {{ row.tier }} 档 · {{ row.rate_usd_min }} USD/min</small><b>{{ (row.expected_usd ~ ' USD') if ledger.direction_settled else '待证' }}</b><span>{{ row.minutes if ledger.direction_settled else '—' }} min</span></div>
     </div>
     {% endfor %}
   </div>
-  <div class="duel-total"><span>实见 {{ ledger.seen_invoice_usd }} USD</span><strong>{{ ledger.delta_usd if ledger.delta_usd is not none else '待证' }}</strong><span>应计 {{ ledger.expected_usd }} USD</span></div>
+  <div class="duel-total"><span>实见 {{ ledger.seen_invoice_usd }} USD</span><strong>{{ ledger.delta_usd if ledger.delta_usd is not none else '待证' }}</strong><span>应计 {{ ledger.expected_usd if ledger.direction_settled else '待证' }}{{ ' USD' if ledger.direction_settled }}</span></div>
 </section>

@@ -38,3 +38,21 @@ def test_evidence_has_actual_source_rows(client):
 def test_missing_evidence_cannot_be_downloaded(client):
     reply = client.get('/api/export/missing')
     assert (reply.status_code, reply.json['code']) == (404, 'UNKNOWN_RUN')
+
+
+def test_certificate_carries_direction_and_withholds_on_reversal(client):
+    pack = certificate(client, 'dirty')
+    assert pack['direction'] == 'DEMURRAGE'
+    assert pack['reversal']['required'] is False
+    assert pack['can_settle'] is False
+
+
+def test_reversal_blocks_settlement_even_when_gap_closed(client, dirty):
+    late = dict(dirty)
+    late['stops'] = dirty['stops'] + 'S90,RAIN,2026-12-31T23:00Z,2027-01-01T01:30Z\n'
+    run_id = client.post('/api/runs', json={'sources': late}).json['run_id']
+    pack = client.get(f'/api/evidence/{run_id}').json
+    assert pack['direction'] == 'DESPATCH'
+    assert pack['reversal']['required'] is True
+    assert pack['can_settle'] is False
+

@@ -36,6 +36,25 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
 .delta span { padding-top: 6px; font-size: 16px; }
 .delta small { font-size: 10px; overflow-wrap: anywhere; }
 .duel-total { background: var(--surface-2); border-top: 1px solid var(--line); }
+.verdict { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-bottom: 1px solid var(--line); }
+.verdict > div { padding: 10px 15px; border-right: 1px solid var(--line); }
+.verdict > div:last-child { border-right: 0; }
+.verdict small, .verdict strong { display: block; }
+.verdict strong { font: 600 clamp(15px,2.6vw,22px) var(--font-num); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.verdict-demurrage strong { color: var(--bad); }
+.verdict-despatch strong { color: var(--ok); }
+.verdict-undetermined strong { color: var(--warn); }
+.verdict-balanced strong { color: var(--ink); }
+.note { padding: 9px 15px; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.5; }
+.note.pending { background: #fdf9f0; color: var(--warn); }
+.note.despatch { background: #f1f7f3; color: var(--ok); }
+.note.reversal { background: #fdf0f3; color: var(--bad); }
+.note.reversal.hold { background: #fdf9f0; color: var(--warn); }
+@media (max-width: 580px) {
+  .verdict { grid-template-columns: 1fr; }
+  .verdict > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .verdict > div:last-child { border-bottom: 0; }
+}
 .archive p, .archive dl { margin: 10px 13px; overflow-wrap: anywhere; }
 @media (max-width: 580px) {
   .ledger-cap, .duel-total, .entry { grid-template-columns: minmax(0,1fr) 74px minmax(0,1fr); }
